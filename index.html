@@ -71,10 +71,18 @@
       },
       {
         "@type": "Question",
-        "name": "Does Cronfig support seconds in cron expressions?",
+        "name": "Does Cronfig support step values like */5?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Cronfig supports standard 5-field cron expressions (minute hour day month weekday) used by Unix crontab, GitHub Actions, and most schedulers. Some systems like Quartz or AWS EventBridge use 6-field expressions with seconds — enter only the 5 core fields for best results."
+          "text": "Yes. */5 in the minute field means every 5 minutes. 0 */2 * * * means every 2 hours at :00. Step values work in all fields."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why is timezone handling important for cron?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Cron expressions don't include timezone information. If your server runs in UTC but your users are in a different timezone, a job scheduled for 0 9 * * * fires at 9AM UTC — which may be a completely different local time. Cronfig shows run times in your browser's local timezone so you can sanity-check what the schedule actually means for you."
         }
       },
       {
