@@ -689,6 +689,9 @@
     }
 
     const parts = expr.split(/\s+/);
+    if (parts.length === 6) {
+      throw new Error('6-field format detected (Quartz/Spring cron with seconds). Remove the first field and try the remaining 5.');
+    }
     if (parts.length !== 5) {
       throw new Error(`Expected 5 fields (minute hour day month weekday), got ${parts.length}`);
     }
@@ -930,6 +933,14 @@
       descBox.textContent = 'Enter a cron expression above to see the schedule description and next run times.';
       rtBox.innerHTML = '';
       input.className = 'cron-input';
+      return;
+    }
+
+    if (raw.toLowerCase() === '@reboot') {
+      descBox.className = 'description-box idle';
+      descBox.textContent = '@reboot — runs once at system startup. Cannot simulate future run times.';
+      input.className = 'cron-input';
+      rtBox.innerHTML = '';
       return;
     }
 
