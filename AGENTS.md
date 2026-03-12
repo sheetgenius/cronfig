@@ -93,4 +93,4 @@ The API will return the JSON format described above. No authentication required 
 
 ## Support
 
-Questions or issues: https://bitterdesk.com
+Questions or issues: https://bitterdesk.com/s/cronfig/
