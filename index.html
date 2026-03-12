@@ -50,7 +50,7 @@
         "name": "What is a cron expression?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "A cron expression is a string of five (or six) fields that defines a schedule for automated tasks. The fields represent minute, hour, day of month, month, and day of week. For example, '0 9 * * 1' means 'every Monday at 9:00 AM'."
+          "text": "A cron expression is a string of five fields that defines a schedule for automated tasks. The fields represent minute, hour, day of month, month, and day of week. For example, '0 9 * * 1' means 'every Monday at 9:00 AM'."
         }
       },
       {
@@ -83,6 +83,14 @@
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Cron expressions don't include timezone information. If your server runs in UTC but your users are in a different timezone, a job scheduled for 0 9 * * * fires at 9AM UTC — which may be a completely different local time. Cronfig shows run times in your browser's local timezone so you can sanity-check what the schedule actually means for you."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why does Cronfig say '6-field format detected'?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Some schedulers — Quartz, Spring's @Scheduled, and AWS Lambda — use a 6-field format with an extra seconds field at the start (e.g. '0 0 9 * * MON-FRI'). Unix cron and most cloud schedulers (GitHub Actions, Kubernetes, CloudWatch Events) use standard 5-field format. Cronfig detects the 6-field format and asks you to remove the leading seconds field to convert it to standard 5-field format."
         }
       },
       {
@@ -581,6 +589,17 @@
           your users are in New York, a job scheduled for <code>0 9 * * *</code> fires at 9AM UTC
           — which is 4AM or 5AM Eastern depending on DST. Cronfig shows run times in your
           browser's local timezone so you can sanity-check what the schedule actually means for you.
+        </dd>
+      </div>
+      <div class="faq-item">
+        <dt>Why does Cronfig say "6-field format detected"?</dt>
+        <dd>
+          Some schedulers use a 6-field cron format with an extra <strong>seconds</strong> field prepended.
+          Quartz Scheduler, Spring's <code>@Scheduled</code>, and AWS Lambda all use this format —
+          for example, <code>0 0 9 * * MON-FRI</code> (fire at 9:00:00 AM weekdays).
+          Unix cron and most cloud schedulers (GitHub Actions, Kubernetes CronJobs, CloudWatch Events)
+          use the standard 5-field format. Cronfig detects 6 fields and asks you to remove the
+          leading seconds field to convert it to standard format.
         </dd>
       </div>
       <div class="faq-item">
