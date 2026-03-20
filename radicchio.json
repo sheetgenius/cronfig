@@ -1,0 +1,13 @@
+{
+  "api_base": "https://radicchio.fly.dev",
+  "files": [
+    "index.html",
+    "og.png",
+    "og.svg",
+    "robots.txt",
+    "sitemap.xml"
+  ],
+  "hostname": "cronfig.radicchio.page",
+  "site_id": 11,
+  "site_name": "Cronfig"
+}
