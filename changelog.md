@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-03-22
+
+### Improved
+- Migrated Radicchio backend API to Hetzner
+
+## 2026-03-20
+
+### Improved
+- Switched to repo-owned Radicchio deployment scripts for more reliable deploys
+- Tightened SEO meta description to under 155 characters
+
+### Added
+- Google Analytics tracking
+
 ## 2026-03-18
 
 - Added cross-links to niacin, aidatacenterindex.com, and bankofpapa in the related tools section.
