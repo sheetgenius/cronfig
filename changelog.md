@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-01
+
+### Improved
+- Deploy: updated Radicchio deploy script to latest factory template
+
 ## 2026-03-30
 
 ### Improved
