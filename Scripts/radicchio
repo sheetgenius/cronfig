@@ -4,11 +4,16 @@
 require "base64"
 require "json"
 require "net/http"
+require "open3"
 require "pathname"
+require "shellwords"
 require "uri"
+require "zlib"
 
 class RadicchioCli
   DEFAULT_MANIFEST = "radicchio.json"
+  ALLOWED_EXTENSIONS = %w[.html .css .js .json .txt .xml .svg .ico .png .jpg .jpeg .gif .webp .woff .woff2 .ttf .eot .webmanifest .mjs .wasm].freeze
+  GZIP_THRESHOLD = 512 * 1024 # compress request bodies > 512 KB
 
   def initialize(argv)
     @argv = argv.dup
@@ -73,7 +78,9 @@ class RadicchioCli
 
     JSON.parse(path.read).tap do |manifest|
       abort "Manifest must include site_id" unless manifest["site_id"]
-      abort "Manifest must include files[]" unless manifest["files"].is_a?(Array) && manifest["files"].any?
+      has_files = manifest["files"].is_a?(Array) && manifest["files"].any?
+      has_build = manifest["build"].is_a?(Hash) && manifest["build"].any?
+      abort "Manifest must include files[] or build{}" unless has_files || has_build
     end
   rescue JSON::ParserError => e
     abort "Invalid manifest JSON: #{e.message}"
@@ -123,10 +130,16 @@ class RadicchioCli
   end
 
   def api_base(manifest)
-    manifest["api_base"].to_s.empty? ? "https://radicchio.fly.dev" : manifest["api_base"]
+    manifest["api_base"].to_s.empty? ? "https://radicchio.bitter.sh" : manifest["api_base"]
   end
 
   def build_payload(manifest)
+    return build_output_payload(manifest) if manifest["build"].is_a?(Hash)
+
+    static_payload(manifest)
+  end
+
+  def static_payload(manifest)
     files = {}
     descriptors = []
     total_bytes = 0
@@ -148,6 +161,53 @@ class RadicchioCli
     }
   end
 
+  def build_output_payload(manifest)
+    build = manifest.fetch("build")
+    install_command = build["install"].to_s.strip
+    build_command = build["command"].to_s.strip
+    publish = build["publish"].to_s.strip
+
+    abort "build.command is required" if build_command.empty?
+    abort "build.publish is required" if publish.empty?
+
+    run_command(install_command) unless install_command.empty?
+    run_command(build_command)
+
+    output_dir = Pathname.new(publish)
+    abort "Build output directory not found: #{publish}" unless output_dir.directory?
+
+    files = {}
+    descriptors = []
+    total_bytes = 0
+
+    Dir.glob("**/*", base: output_dir.to_s).sort.each do |relative|
+      full = output_dir.join(relative)
+      next unless full.file?
+      next if relative.start_with?(".")
+      next unless ALLOWED_EXTENSIONS.include?(full.extname.downcase)
+
+      bytes = full.binread
+      total_bytes += bytes.bytesize
+      files[relative] = encode(bytes)
+      descriptors << { path: relative, bytes: bytes.bytesize }
+    end
+
+    abort "No deployable files found in #{publish}" if files.empty?
+
+    {
+      files: files,
+      descriptors: descriptors,
+      total_bytes: total_bytes
+    }
+  end
+
+  def run_command(command)
+    puts "==> #{command}"
+    stdout, status = Open3.capture2e(command)
+    print stdout
+    abort "Command failed: #{command}" unless status.success?
+  end
+
   def encode(bytes)
     text = bytes.dup.force_encoding("UTF-8")
     return text if text.valid_encoding?
@@ -160,7 +220,14 @@ class RadicchioCli
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{ENV.fetch("RADICCHIO_API_TOKEN")}"
     request["Content-Type"] = "application/json"
-    request.body = JSON.generate({ name: name, arguments: arguments })
+
+    json = JSON.generate({ name: name, arguments: arguments })
+    if json.bytesize > GZIP_THRESHOLD
+      request["Content-Encoding"] = "gzip"
+      request.body = Zlib.gzip(json)
+    else
+      request.body = json
+    end
 
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 120) do |http|
       http.request(request)
