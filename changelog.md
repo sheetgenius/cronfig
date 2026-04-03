@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-02
+
+### Improved
+- Removed FAQPage JSON-LD from homepage to recover click-through rate in search results
+
 ## 2026-04-01
 
 ### Improved
